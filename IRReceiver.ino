@@ -20,6 +20,7 @@ unsigned long time, dt, timeout;
 // the setup routine runs once when you press reset:
 void setup() {
   // initialize serial communication at 9600 bits per second:
+  delay(100);
   Serial.begin(9600);
   // make the pushbutton's pin an input:
   pinMode(irr1, INPUT);
@@ -39,6 +40,7 @@ void setup() {
 
 // the loop routine runs over and over again forever:
 void loop() {
+  /*
   switch (state) {
     case 0:
       data[0] = 0x02;
@@ -47,11 +49,13 @@ void loop() {
       data[3] = 0x00;
       data[4] = mColor;
     
-      Serial.write(data, 5);
+      //Serial.write(data, 5);
       delay(100);
       break;
       
     case 1:
+      digitalWrite(LED2, HIGH);
+
       if(detectLeader(irr1)) {
         data[0] = 0x00;//mode:connect
         data[1] = analyzeSignal(irr1);
@@ -91,11 +95,15 @@ void loop() {
         digitalWrite(LED2, LOW);
       }
       delay(100);
+      break;
   }
-  
+*/
   if(Serial.available() > 0) {
-    mColor = Serial.read();
-    state = 1;
+    digitalWrite(LED2, HIGH);
+
+      mColor = Serial.read();
+      if (mColor = 0x04)
+        state = 1;
   }
   // print out the state of the button:
   
