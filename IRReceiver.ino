@@ -1,44 +1,43 @@
-/*
-  DigitalReadSerial
- Reads a digital input on pin 2, prints the result to the serial monitor 
- 
- This example code is in the public domain.
- */
-
-// digital pin 2 has a pushbutton attached to it. Give it a name:
 int irr1 = 3;
 int irr2 = 4;
 byte tID = 0x01;
 
-int LED = 13;
-int LED2 = 12;
+int R = 9;//15
+int G = 11;//17
+int B = 10;//16
 
-int state;
+int state, phase;
 byte data[5], mColor, signal, pirr[2];
-unsigned long time, dt, timeout;
-//unsigned int signal;
-// the setup routine runs once when you press reset:
-void setup() {
-  // initialize serial communication at 9600 bits per second:
-  delay(100);
-  Serial.begin(9600);
-  // make the pushbutton's pin an input:
-  pinMode(irr1, INPUT);
-  pinMode(irr2, INPUT);
+unsigned long time, dt, timeout, t1, dt1;
 
-  digitalWrite(LED, LOW);
-  digitalWrite(LED2, LOW);
-  time = micros();
+void setup() {
+
+  Serial.begin(9600);
+
+  pinMode(irr1, INPUT_PULLUP);
+  pinMode(irr2, INPUT_PULLUP);
+
+  pinMode(R, OUTPUT);
+  pinMode(G, OUTPUT);
+  pinMode(B, OUTPUT);
+
+  analogWrite(R, 0);
+  analogWrite(G, 0);
+  analogWrite(B, 0);
+
   dt = 0;
   timeout = 0;
+  phase = 0;
   signal = 0x00;
   state = 0x00;
   mColor = 0x00;
   pirr[0] = 0x00;
-  pirr[1] = 0x01;
+  pirr[1] = 0x00;
+  
+  delay(100);
+  time = micros();
 }
 
-// the loop routine runs over and over again forever:
 void loop() {
   switch (state) {
     case 0:
@@ -50,11 +49,12 @@ void loop() {
     
       Serial.write(data, 5);
       delay(100);
+      updateLED(100);
       break;
       
     case 1:
-      digitalWrite(LED2, HIGH);
-
+      t1 = millis();
+      
       if(detectLeader(irr1)) {
         data[0] = 0x00;//mode:connect
         data[1] = analyzeSignal(irr1);
@@ -62,7 +62,6 @@ void loop() {
         data[3] = 0x00;//type:Data
         data[4] = mColor;
         Serial.write(data, 5);
-        digitalWrite(LED, HIGH);
         pirr[0] = data[1];
       }else {
         data[0] = 0x01;//mode:disconnect
@@ -71,7 +70,6 @@ void loop() {
         data[3] = 0x00;//type:Data
         data[4] = mColor;
         Serial.write(data, 5);
-        digitalWrite(LED, LOW);
       }
   
       if(detectLeader(irr2)) {
@@ -81,18 +79,18 @@ void loop() {
         data[3] = 0x01;//type:Stream
         data[4] = mColor;
         Serial.write(data, 5);
-        digitalWrite(LED2, HIGH);
         pirr[1] = data[1];
       }else {
         data[0] = 0x01;//mode:disconnect
-        data[1] = pirr[0];
+        data[1] = pirr[1];
         data[2] = tID;
         data[3] = 0x01;//type:Stream
         data[4] = mColor;
         Serial.write(data, 5);
-        digitalWrite(LED2, LOW);
       }
-
+      
+      dt1 = millis() - t1;
+      updateLED(dt);
       break;
       
     default:
@@ -103,49 +101,31 @@ void loop() {
       mColor = Serial.read();
       state = 1;
   }
-  // print out the state of the button:
-  
-  //delayMicroseconds(10);        // delay in between reads for stability
 }
 
 boolean detectLeader(const int irr) {
+  time = micros();
+  while(!digitalRead(irr));
+  dt = micros() - time;
+  timeout += dt;
   
-  while(!digitalRead(irr)) {
+  if (dt > 8000 && dt < 9000) {
+    time = micros();
+    while(digitalRead(irr));
     dt = micros() - time;
     timeout += dt;
-    delayMicroseconds(50);
-    time = micros();
-
-    if (timeout > 10000) {
+    
+    if (dt > 4000 && dt < 5000) {
       timeout = 0;
-      return false;
+      return true;
     }
   }
   
-  if (timeout > 8000 && timeout < 9000) {
-    timeout = 0;
-    while(digitalRead(irr)) {
-      dt = micros() - time;
-      timeout += dt;
-      delayMicroseconds(50);
-      time = micros();
-      
-      if (timeout > 6000) {
-        timeout = 0;
-        return false;
-      }
-    }
-    
-    if (timeout > 4000 && timeout < 5000) {
-      timeout = 0;
-      return true;
-    }else {
-      timeout = 0;
-      return false;
-    }
-  }else {
+  if (timeout > 60000) {
     timeout = 0;
     return false;
+  }else {
+    detectLeader(irr);
   }
 }
 
