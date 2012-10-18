@@ -40,7 +40,6 @@ void setup() {
 
 // the loop routine runs over and over again forever:
 void loop() {
-  /*
   switch (state) {
     case 0:
       data[0] = 0x02;
@@ -49,7 +48,7 @@ void loop() {
       data[3] = 0x00;
       data[4] = mColor;
     
-      //Serial.write(data, 5);
+      Serial.write(data, 5);
       delay(100);
       break;
       
@@ -74,7 +73,6 @@ void loop() {
         Serial.write(data, 5);
         digitalWrite(LED, LOW);
       }
-      delay(100);
   
       if(detectLeader(irr2)) {
         data[0] = 0x00;//mode:connect
@@ -94,16 +92,16 @@ void loop() {
         Serial.write(data, 5);
         digitalWrite(LED2, LOW);
       }
-      delay(100);
+
+      break;
+      
+    default:
       break;
   }
-*/
+  
   if(Serial.available() > 0) {
-    digitalWrite(LED2, HIGH);
-
       mColor = Serial.read();
-      if (mColor = 0x04)
-        state = 1;
+      state = 1;
   }
   // print out the state of the button:
   
@@ -111,25 +109,40 @@ void loop() {
 }
 
 boolean detectLeader(const int irr) {
-  time = micros();
-  while(!digitalRead(irr));
-  dt = micros() - time;
-  timeout += dt;
-
-  if (dt > 8000 && dt < 9000) {
-    time = micros();
-    while(digitalRead(irr));
+  
+  while(!digitalRead(irr)) {
     dt = micros() - time;
     timeout += dt;
-    
-    if (dt > 4000 && dt < 5000) {
+    delayMicroseconds(50);
+    time = micros();
+
+    if (timeout > 10000) {
       timeout = 0;
-      return true;
+      return false;
     }
   }
   
-  if(timeout < 100000) {
-    detectLeader(irr);
+  if (timeout > 8000 && timeout < 9000) {
+    timeout = 0;
+    while(digitalRead(irr)) {
+      dt = micros() - time;
+      timeout += dt;
+      delayMicroseconds(50);
+      time = micros();
+      
+      if (timeout > 6000) {
+        timeout = 0;
+        return false;
+      }
+    }
+    
+    if (timeout > 4000 && timeout < 5000) {
+      timeout = 0;
+      return true;
+    }else {
+      timeout = 0;
+      return false;
+    }
   }else {
     timeout = 0;
     return false;
