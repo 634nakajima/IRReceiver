@@ -1,4 +1,4 @@
-int ctR[] = {//mColor:0
+/*int ctR[] = {//mColor:0
   255,255,255,255,255,255,255,255,
   255,255,255,255,255,255,255,255,
   255,255,255,255,255,255,255,255,
@@ -214,4 +214,4 @@ void updateLED(unsigned long t) {
   analogWrite(R, ctR[mColor*128+phase]);
   analogWrite(G, ctG[mColor*128+phase]);
   analogWrite(B, ctB[mColor*128+phase]);
-}
+}*/
