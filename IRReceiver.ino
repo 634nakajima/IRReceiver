@@ -1,4 +1,4 @@
-int on[] = {//mColor:0
+int off[] = {//mColor:0
   255,255,255,255,255,255,255,255,
   255,255,255,255,255,255,255,255,
   255,255,255,255,255,255,255,255,
@@ -17,7 +17,7 @@ int on[] = {//mColor:0
   255,255,255,255,255,255,255,255
 };
 
-int off[] = {//mColor:0
+int on[] = {//mColor:0
   0,  0,  0,  0,  0,  0,  0,  0,
   0,  0,  0,  0,  0,  0,  0,  0,
   0,  0,  0,  0,  0,  0,  0,  0,
@@ -39,7 +39,7 @@ int off[] = {//mColor:0
 
 int irr1 = 3;
 int irr2 = 4;
-byte tID = 0x01;
+byte tID = 0x04;
 
 int R = 9;//15
 int G = 11;//17
@@ -128,7 +128,6 @@ void setup() {
 
   pirr[0] = 0x00;
   pirr[1] = 0x00;
-  tID = 0x01;
   time = micros();
   
   Serial.begin(9600);
@@ -184,7 +183,6 @@ void loop() {
         data[4] = mColor;
         Serial.write(data, 5);
       }
-      
       dt1 = millis() - t1;
       updateLED(dt1);
       break;
@@ -195,7 +193,11 @@ void loop() {
   
   if(Serial.available() > 0) {
       mColor = Serial.read();
-      state = 1;
+      if (mColor == 0) {
+        state = 0;
+      }else {
+        state = 1;
+      }
   }
 }
 
@@ -228,8 +230,10 @@ boolean detectLeader(const int irr) {
 byte analyzeSignal(const int irr) {
   while(!digitalRead(irr));
   time = micros();
-  while(digitalRead(irr));
-  dt = micros() - time;
+  while(digitalRead(irr)) {
+    dt = micros() - time;
+    if (dt > 5000) break;
+  }
   
   if(dt > 500 && dt < 700) {
     return 0x00 | analyzeSignal(irr) << 1;
